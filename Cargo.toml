@@ -50,8 +50,13 @@ log = "0.4"
 raw-window-handle = "0.6"
 thiserror = "2"
 uuid = "1"
-tauri = { version = "2.12", features = ["unstable"] }
-tauri-runtime-wry = { version = "2.12", features = ["unstable"] }
+# Tauri's defaults without `dbus`: with it, TAO reads the colour scheme from
+# the XDG desktop portal on the main thread, 5 s per call when the portal never
+# answers, and the window opens that much later. Without it TAO follows GTK's
+# theme; an app that wants the portal's `color-scheme` reads it off the main
+# thread.
+tauri = { version = "2.12", default-features = false, features = ["unstable", "wry", "compression", "common-controls-v6", "dynamic-acl", "x11"] }
+tauri-runtime-wry = { version = "2.12", default-features = false, features = ["unstable", "x11"] }
 # GPUI from crates.io: `gpui-pre` is a published snapshot of zed's gpui (the
 # same crates gpui-kit / gpui-component build on). Renamed so code says `gpui`.
 gpui = { package = "gpui-pre", version = "=0.3.9", default-features = false }
@@ -110,7 +115,7 @@ accesskit_windows = "0.34"
 tauri-plugin = { version = "2", features = ["build"] }
 
 [dev-dependencies]
-tauri = { version = "2.12", features = ["unstable", "test"] }
+tauri = { version = "2.12", default-features = false, features = ["unstable", "test", "wry", "compression", "common-controls-v6", "dynamic-acl", "x11"] }
 tauri-plugin-clipboard-manager = "2"
 async-task = "4"
 
