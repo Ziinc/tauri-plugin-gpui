@@ -115,16 +115,24 @@ wait_for 'ios-demo: focusing input'
 wait_for 'layout bottom=[0-9]{3}' 30
 sleep 2
 sync_log
+# The demo logs the inset only when it changes, so the safe-area inset it
+# starts from comes before "focusing input": take the last one logged there.
+# A busy simulator can render its first frame after focus partway into the
+# slide, so the first sample after focus is no baseline.
+before=$(sed -n '/ios-demo: focusing input/q;p' "$log" | grep -oE 'layout bottom=[0-9.]+' | tail -n 1 | cut -d= -f2)
 bottoms=$(sed -n '/ios-demo: focusing input/,$p' "$log" | grep -oE 'layout bottom=[0-9.]+' | cut -d= -f2)
-echo "ios-smoke: bottom insets:" $bottoms
-echo "$bottoms" | awk '
+echo "ios-smoke: bottom inset before focus: ${before:-none}; after:" $bottoms
+echo "$bottoms" | awk -v before="$before" '
   { values[NR] = $1 }
   END {
-    # Measure from the lowest sample: the first frame can still show the
-    # previous layout, and a busy simulator can render it partway into the
-    # slide.
-    for (i = 1; i <= NR; i++) if (start == 0 || values[i] < values[start]) start = i
-    first = values[start]; last = values[NR]
+    if (before != "") {
+      first = before + 0; start = 0
+    } else {
+      # No inset before focus: measure from the lowest sample.
+      for (i = 1; i <= NR; i++) if (start == 0 || values[i] < values[start]) start = i
+      first = values[start]
+    }
+    last = values[NR]
     if (last < first + 50) { print "the keyboard inset never grew"; exit 1 }
     for (i = start + 1; i < NR; i++) if (values[i] > first && values[i] < last) between++
     if (between < 3) { print "the keyboard inset jumped (" between + 0 " intermediate values)"; exit 1 }
