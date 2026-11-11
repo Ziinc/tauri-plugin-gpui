@@ -164,9 +164,11 @@ impl Runtime {
                     "tauri-plugin-gpui: GPUI attached ({width}x{height} px, density {density})"
                 );
                 if let Some(inner) = self.attached() {
-                    let insets = self.android.insets.borrow().clone();
-                    inner.state.borrow_mut().insets = insets;
                     inner.state.borrow_mut().active = true;
+                    // Through `set_insets`, as iOS does, so GPUI redraws: the
+                    // first frame was laid out before these were applied.
+                    let insets = self.android.insets.borrow().clone();
+                    inner.set_insets(insets);
                 }
                 // Tauri's setup has registered the app's plugins by now.
                 crate::android::load_plugins();
